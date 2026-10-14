@@ -1,0 +1,1886 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bonsai finserv deck</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f9f7f2;
+      --paper-2: #ffffff;
+      --paper-3: #fbf9f4;
+      --sand: #f2eee2;
+      --sage: #b8d9df;
+      --sage-deep: #5d91a5;
+      --ocean: #2f607a;
+      --clay: #b9573b;
+      --pollen: #9b8238;
+      --mist: #858c8d;
+      --ink: #0d0d0d;
+      --ink-2: #252524;
+      --muted: #605e54;
+      --faint: rgba(13, 13, 13, 0.14);
+      --hairline: rgba(13, 13, 13, 0.12);
+      --rule: rgba(13, 13, 13, 0.72);
+      --dark: #0f0f11;
+      --dark-2: #18181c;
+      --dark-line: rgba(240, 240, 245, 0.24);
+      --dark-muted: rgba(240, 240, 245, 0.64);
+      --radius-control: 8px;
+      --radius-float: 12px;
+      --shadow-float: 0 24px 80px rgba(13, 13, 13, 0.22);
+      --sans: var(--kay-font-sans, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+      --serif: var(--kay-font-serif, "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif);
+      --mono: var(--kay-font-mono, "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace);
+      --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+      --ease-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; }
+    body {
+      margin: 0;
+      background: var(--dark);
+      color: var(--ink-2);
+      font-family: var(--sans);
+      -webkit-font-smoothing: antialiased;
+      text-rendering: geometricPrecision;
+    }
+    button { font: inherit; color: inherit; }
+
+    .deck-app {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      grid-template-rows: minmax(0, 1fr) 52px;
+      background: var(--paper);
+    }
+
+    .bottombar {
+      position: relative;
+      z-index: 40;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto auto;
+      align-items: center;
+      gap: 18px;
+      min-height: 52px;
+      padding: 0 18px;
+      border-top: 1px solid var(--hairline);
+      background: color-mix(in srgb, var(--paper) 88%, transparent);
+      backdrop-filter: blur(18px) saturate(1.1);
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      font-size: 13px;
+      line-height: 18px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+    .kay-mark {
+      width: 18px;
+      height: 18px;
+      flex: 0 0 auto;
+      color: currentColor;
+    }
+    .brand span:last-child {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .meta {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 16px;
+      font-family: var(--mono);
+      letter-spacing: 0.02em;
+    }
+    .deck-app.dark-chrome .bottombar {
+      border-color: rgba(244, 241, 234, 0.24);
+      background: rgba(15, 20, 22, 0.72);
+      color: var(--paper);
+    }
+    .deck-app.dark-chrome .meta,
+    .deck-app.dark-chrome .brand span:last-child { color: rgba(244, 241, 234, 0.64); }
+    .deck-app.dark-chrome .nav-button {
+      border-color: rgba(244, 241, 234, 0.24);
+      color: var(--paper);
+    }
+    .deck-app.dark-chrome .nav-button:hover { background: rgba(244, 241, 234, 0.08); }
+
+    .progress {
+      position: relative;
+      width: 100%;
+      min-width: 60px;
+      height: 4px;
+      border-radius: 999px;
+      background: rgba(37, 37, 36, 0.13);
+      overflow: hidden;
+    }
+    .progress-fill {
+      width: 0%;
+      height: 100%;
+      border-radius: inherit;
+      background: var(--ink-2);
+      transition: width 520ms var(--ease);
+    }
+    .deck-app.dark-chrome .progress { background: rgba(244, 241, 234, 0.18); }
+    .deck-app.dark-chrome .progress-fill { background: var(--paper); }
+
+    .slide-stage {
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+      background: var(--paper);
+    }
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(40px) scale(0.992);
+      transition: opacity 420ms var(--ease), transform 620ms var(--ease);
+      background: var(--paper);
+    }
+    .slide.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(0) scale(1);
+      z-index: 10;
+    }
+    .slide.previous { transform: translateX(-40px) scale(0.992); }
+    .slide.dark { color: var(--paper); background: var(--dark); }
+
+    .eyebrow {
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 14px;
+      font-weight: 700;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+    }
+    .dark .eyebrow { color: var(--dark-muted); }
+
+    .content {
+      position: relative;
+      min-width: 0;
+      padding: clamp(26px, min(5.6vw, 5.8vh), 88px) clamp(44px, 6.3vw, 104px);
+      overflow: hidden;
+    }
+    .split-content {
+      display: grid;
+      grid-template-columns: minmax(0, 1.06fr) minmax(340px, .94fr);
+      gap: clamp(32px, 5vw, 72px);
+      align-items: start;
+      height: 100%;
+      /* Match .content.stacked so every body slide's headline sits at one height. */
+      padding-top: clamp(34px, 7.4vh, 104px);
+    }
+    /* The text column sets the shared top line; the figure beside it stays centred. */
+    .split-content > *:not(.stack) { align-self: center; }
+    .stack { display: grid; gap: 24px; align-content: center; }
+
+    h1, h2, h3, p { margin: 0; }
+    h1,
+    h2 {
+      font-family: var(--serif);
+      font-weight: 400;
+      letter-spacing: -0.055em;
+      text-wrap: balance;
+    }
+    /* One type ramp. Every slide sets --head; the headline uses it and the sub is
+       a fixed proportion of it, so the head:sub relationship is identical whether
+       a slide shouts at 106px or speaks at 63px. Before this, the head scaled and
+       the sub stayed pinned at 24px, so the ratio drifted from 2.6:1 to 3.9:1. */
+    /* THREE TIERS, assigned by what a slide IS, never by which markup it inherited.
+       Body is the DEFAULT so a new slide is correctly sized without opting in.
+         hero      — the cover, once
+         statement — a full-bleed section moment (no body content beside it)
+         body      — every ordinary argument slide
+       The sub is always --head x --sub-scale, so head:sub is identical in all three. */
+    .slide {
+      --head: clamp(34px, min(4.4vw, 7vh), 70px);
+      --sub-scale: .38;
+    }
+    .slide.hero-slide { --head: clamp(58px, min(8vw, 13.5vh), 132px); }
+    .slide:has(.statement-head) { --head: clamp(50px, min(6.6vw, 10vh), 112px); }
+
+    h1 {
+      max-width: 1100px;
+      font-size: var(--head);
+      line-height: .98;
+    }
+    h2 {
+      max-width: 980px;
+      font-size: var(--head);
+      line-height: 1.04;
+    }
+    h3 {
+      font-size: clamp(18px, 1.55vw, 28px);
+      line-height: 1.08;
+      letter-spacing: -.035em;
+      font-weight: 650;
+      text-wrap: balance;
+    }
+    .lead {
+      max-width: 30em;
+      color: var(--muted);
+      font-size: calc(var(--head) * var(--sub-scale));
+      line-height: 1.38;
+      letter-spacing: -.025em;
+      text-wrap: balance;
+    }
+    /* Opt-out of the 30em measure for a sub that must hold one line. */
+    .lead.lead-wide { max-width: none; }
+    .dark .lead { color: rgba(244, 241, 234, .74); }
+    .body {
+      color: var(--muted);
+      font-size: clamp(14px, 1.08vw, 18px);
+      line-height: 1.48;
+    }
+    .dark .body { color: rgba(244, 241, 234, .66); }
+    em { color: var(--ocean); font-style: normal; }
+    .dark em { color: var(--sage); }
+    .accent-word { color: var(--sage-deep); }
+    .dark .accent-word { color: var(--sage); }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity 520ms var(--ease), transform 680ms var(--ease), clip-path 680ms var(--ease);
+      transition-delay: calc(var(--i, 0) * 90ms + 80ms);
+    }
+    .active .reveal {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Statement slide — one idea, held in space. */
+    .statement { display: grid; align-content: center; height: 100%; }
+    .statement-block { max-width: 1180px; }
+    .statement-head {
+      max-width: 1150px;
+      margin-top: 30px;
+      font-size: var(--head);
+      line-height: 1;
+    }
+    .statement-sub {
+      max-width: 26em;
+      margin-top: clamp(30px, 5vh, 68px);
+      color: var(--muted);
+      font-size: calc(var(--head) * var(--sub-scale));
+      line-height: 1.36;
+      letter-spacing: -.022em;
+      text-wrap: balance;
+    }
+
+    .content.stacked {
+      display: grid;
+      align-content: start;
+      row-gap: clamp(14px, 3.6vh, 40px);
+      height: 100%;
+      padding-top: clamp(34px, 7.4vh, 104px);
+    }
+    .content.stacked > * { margin-top: 0; }
+    /* Sparse slides (bar charts, four-up pipeline): header stays on the shared top line;
+       everything under it is centred in the remaining space. */
+    .content.stacked.vcenter {
+      display: flex;
+      flex-direction: column;
+      gap: clamp(24px, 5.5vh, 60px);
+    }
+    .content.stacked.vcenter > .stack { flex: none; }
+    .content.stacked.vcenter > .composition,
+    .content.stacked.vcenter > .pipeline { margin-top: auto; }
+    .content.stacked.vcenter > .punch,
+    .content.stacked.vcenter > .pipe-caption { margin-bottom: auto; }
+    /* Chart slides: header + sub stay put; graphic starts a fixed beat below the sub. */
+    .content.stacked.vcenter > .composition { margin-top: clamp(16px, 6.5vh, 70px); }
+    .content.stacked.vcenter .composition { gap: clamp(16px, 3vh, 30px); }
+    .slide.dark .eyebrow, .slide.dark .statement-sub { color: color-mix(in srgb, var(--paper) 70%, transparent); }
+
+    /* Scatter — four ways of asking, four places the work lands. */
+    .scatter-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.08fr) minmax(280px, .92fr);
+      gap: clamp(28px, 4.4vw, 72px);
+      align-items: center;
+      margin-top: clamp(10px, 3.2vh, 54px);
+    }
+    .quote-col { border-top: 1px solid var(--hairline); }
+    .quote-row {
+      display: grid;
+      grid-template-columns: 64px minmax(0, 1fr);
+      gap: 16px;
+      align-items: start;
+      padding: clamp(8px, 1.5vh, 15px) 0;
+      border-bottom: 1px solid var(--hairline);
+    }
+    .quote-num {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding-top: 4px;
+    }
+    .quote-text {
+      color: var(--ink-2);
+      font-size: clamp(14px, 1.12vw, 18px);
+      line-height: 1.4;
+    }
+    .target-col { display: grid; gap: 20px; justify-items: center; }
+    /* Scatter slide only: lift the caption out of flow so the bull, not the
+       caption-weighted column, lands on the quote column's midline.
+       The bet slide reuses .target-col with a caption that must stay in flow. */
+    .scatter-grid .target-col { position: relative; gap: 0; }
+    .scatter-grid .target-col .target-caption { position: absolute; top: 100%; left: 0; right: 0; margin-top: 14px; }
+    .loop-col { display: grid; gap: 18px; justify-items: center; }
+    .loop { width: 100%; max-width: none; height: auto; display: block; }
+    .loop .ring-arc { fill: none; stroke: var(--ocean); stroke-width: 1.5; marker-end: url(#loopArrow); }
+    .loop .node { fill: var(--paper-2); stroke: var(--ink-2); stroke-width: 1.4; }
+    .loop .loop-label { font-family: var(--mono); font-size: 12.5px; letter-spacing: .05em; text-transform: uppercase; fill: var(--ink-2); }
+    .loop .loop-mark { fill: rgba(13, 13, 13, .16); }
+    .lanes { }
+    .lanes-head {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--ocean);
+      padding: 12px 0 4px;
+    }
+    .lane {
+      display: flex;
+      gap: 12px;
+      align-items: baseline;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--hairline);
+      font-size: clamp(13px, 1.05vw, 17px);
+    }
+    .lane strong { color: var(--ink-2); font-weight: 650; white-space: nowrap; }
+    .lane span { color: var(--muted); line-height: 1.35; }
+    .target { width: 100%; max-width: min(340px, 36vh); height: auto; display: block; }
+    .target .ring { fill: none; stroke: var(--hairline); }
+    .target .ring.mid { stroke: rgba(13, 13, 13, .18); }
+    .target .ring.inner { stroke: rgba(13, 13, 13, .26); }
+    .target .bull { fill: var(--sage-deep); }
+    .target .cross { stroke: var(--hairline); }
+    .dart { transform-box: fill-box; transform-origin: center; opacity: 0; }
+    .dart circle { fill: var(--ink-2); }
+    .dart.close circle { fill: var(--ocean); }
+    .dart text { fill: var(--ink-2); font-family: var(--mono); font-size: 13px; font-weight: 700; letter-spacing: .06em; }
+    .dart.close text { fill: var(--ocean); }
+    .active .dart { animation: dart-hit 460ms var(--ease-pop) both; animation-delay: calc(var(--i, 0) * 170ms + 480ms); }
+    @keyframes dart-hit {
+      from { opacity: 0; transform: scale(.35); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .loop-caption {
+      font-size: clamp(12px, 1vw, 15px);
+      color: var(--muted);
+      text-align: center;
+      letter-spacing: -.01em;
+    }
+    .target-caption {
+      font-family: var(--mono);
+      font-size: clamp(11px, .95vw, 13px);
+      letter-spacing: .09em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    @media (max-width: 900px) {
+      .scatter-grid { grid-template-columns: 1fr; gap: 24px; }
+      .target { max-width: 280px; }
+    }
+
+    /* Cascade — what a weak prompt actually costs. */
+    /* Retained only so existing markup keeps working: identical to a bare h2. */
+    .head-md { max-width: 980px; font-size: var(--head); line-height: 1.04; }
+    .cascade {
+      display: grid;
+      align-content: start;
+      max-width: 1080px;
+      margin-top: clamp(14px, 2.6vh, 34px);
+    }
+    .cascade-quote {
+      display: grid;
+      grid-template-columns: 52px minmax(0, 1fr);
+      gap: 14px;
+      align-items: baseline;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--hairline);
+    }
+    .cascade-step {
+      display: grid;
+      grid-template-columns: 40px minmax(0, 1fr);
+      gap: 16px;
+      align-items: baseline;
+      padding: 17px 0;
+      color: var(--muted);
+      font-size: clamp(15px, 1.3vw, 21px);
+      line-height: 1.36;
+      letter-spacing: -.022em;
+      text-wrap: pretty;
+    }
+    .cascade-step .n {
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: .08em;
+      color: var(--muted);
+    }
+    .cascade-step strong { color: var(--ink-2); font-weight: 650; }
+    .cascade-out {
+      margin-top: clamp(20px, 3vh, 34px);
+      color: var(--ocean);
+      font-size: clamp(17px, 1.5vw, 25px);
+      font-weight: 650;
+      letter-spacing: -.03em;
+      line-height: 1.24;
+    }
+    .punch {
+      margin-top: clamp(12px, 3.4vh, 42px);
+      padding-top: clamp(12px, 2vh, 22px);
+      font-family: var(--serif);
+      font-size: clamp(20px, min(2.1vw, 3.4vh), 34px);
+      line-height: 1.14;
+      letter-spacing: -.038em;
+      color: var(--ink-2);
+      text-wrap: balance;
+    }
+
+    .argue {
+      color: var(--muted);
+      font-size: clamp(15px, 1.25vw, 20px);
+      line-height: 1.45;
+      max-width: 620px;
+    }
+    .argue strong { color: var(--ink-2); font-weight: 650; }
+
+    /* Floor line — the ceiling holds, the floor rises. */
+    .floor-viz {
+      position: relative;
+      height: clamp(300px, 44vh, 440px);
+      margin-bottom: 26px;
+    }
+    .fv-band {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 16%;
+      bottom: 14%;
+      background: linear-gradient(180deg, rgba(47, 96, 122, .14), rgba(47, 96, 122, .03));
+      transition: bottom 1150ms var(--ease);
+    }
+    .slide[data-step="1"] .fv-band { bottom: 44%; }
+    .fv-line { position: absolute; left: 0; right: 0; }
+    .fv-rule { display: block; height: 1px; background: var(--rule); }
+    .fv-label {
+      position: absolute;
+      left: 0;
+      bottom: 10px;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .fv-line.ceiling { top: 16%; }
+    .fv-line.floor {
+      top: 86%;
+      transition: top 1150ms var(--ease);
+    }
+    .slide[data-step="1"] .fv-line.floor { top: 56%; }
+    .fv-line.floor .fv-rule { background: var(--ocean); height: 2px; }
+    /* Where the floor used to be. The live slide animates the rise; a static
+       export cannot, so the two earlier positions stay on screen as a trail. */
+    .fv-line.ghost { opacity: 0; transition: opacity 620ms var(--ease); }
+    .fv-line.ghost .fv-rule {
+      height: 0;
+      background: none;
+      border-top: 1px dashed color-mix(in srgb, var(--ocean) 46%, transparent);
+    }
+    .fv-line.ghost.g1 { top: 86%; }
+    .fv-line.ghost.g2 { top: 71%; }
+    .slide[data-step="1"] .fv-line.ghost { opacity: 1; transition-delay: 340ms; }
+    .fv-line.floor .fv-label { color: var(--ocean); }
+    .fv-push {
+      position: absolute;
+      top: 14px;
+      left: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      opacity: 0;
+      transform: translateY(14px);
+      transition: opacity 520ms var(--ease), transform 620ms var(--ease);
+    }
+    .slide[data-step="1"] .fv-push { opacity: 1; transform: translateY(0); transition-delay: 260ms; }
+    .fv-caption { opacity: 0; transform: translateY(10px); transition: opacity .55s var(--ease, ease), transform .55s var(--ease, ease); }
+    .slide[data-step="1"] .fv-caption { opacity: 1; transform: translateY(0); transition-delay: 480ms; }
+    /* Convergence — successive skill versions walking in toward the bull. */
+    .gen { opacity: 0; transition: opacity 620ms var(--ease); }
+    .gen circle { fill: var(--ocean); }
+    .slide[data-step="0"] .gen[data-gen="0"],
+    .slide[data-step="1"] .gen[data-gen="1"],
+    .slide[data-step="2"] .gen[data-gen="2"],
+    .slide[data-step="3"] .gen[data-gen="3"] { opacity: 1; }
+    .slide[data-step="1"] .gen[data-gen="0"],
+    .slide[data-step="2"] .gen[data-gen="0"],
+    .slide[data-step="2"] .gen[data-gen="1"],
+    .slide[data-step="3"] .gen[data-gen="0"],
+    .slide[data-step="3"] .gen[data-gen="1"],
+    .slide[data-step="3"] .gen[data-gen="2"] { opacity: .2; }
+
+    .bet-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(210px, .95fr);
+      gap: clamp(22px, 4.2vw, 68px);
+      align-items: center;
+      margin-top: clamp(18px, 3vh, 40px);
+    }
+    .bet-grid .target { max-width: min(330px, 34vh); }
+    .punch.centered {
+      text-align: center;
+      max-width: 880px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* Slide 6 is the exception: the steps and the target only make their
+       point beside each other, so it keeps two columns far longer. */
+    @media (max-width: 480px) {
+      .bet-grid { grid-template-columns: 1fr; gap: 24px; }
+    }
+    .vstate { display: none; text-align: center; }
+    .slide[data-step="0"] .vstate[data-when="0"],
+    .slide[data-step="1"] .vstate[data-when="1"],
+    .slide[data-step="2"] .vstate[data-when="2"],
+    .slide[data-step="3"] .vstate[data-when="3"] { display: block; }
+    .vstate-prompt {
+      color: var(--ink-2);
+      font-size: clamp(15px, 1.25vw, 20px);
+      line-height: 1.3;
+      letter-spacing: -.02em;
+      margin-bottom: 10px;
+      /* Reserve two lines so short prompts don't change the column height
+         and shift the timeline between steps. */
+      min-height: 2.6em;
+    }
+
+    /* Version timeline — what Kay is doing at each step. */
+    .tl-head {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding-bottom: 12px;
+    }
+    .tl { border-top: 1px solid var(--hairline); }
+    .tl-row {
+      display: grid;
+      grid-template-columns: 40px minmax(0, 1fr);
+      gap: 14px;
+      align-items: baseline;
+      padding: 13px 0;
+      border-bottom: 1px solid var(--hairline);
+      opacity: 0;
+      transition: opacity 520ms var(--ease);
+    }
+    .tl-v { font-family: var(--mono); font-size: 12px; letter-spacing: .06em; color: var(--muted); }
+    .tl-row strong { display: block; color: var(--ink-2); font-weight: 650; letter-spacing: -.015em; font-size: clamp(14px, 1.12vw, 18px); }
+    .tl-row span.tl-note { color: var(--muted); font-size: clamp(13px, 1vw, 15px); line-height: 1.35; }
+    .slide[data-step="0"] .tl-row[data-at="0"],
+    .slide[data-step="1"] .tl-row[data-at="0"],
+    .slide[data-step="1"] .tl-row[data-at="1"],
+    .slide[data-step="2"] .tl-row[data-at="0"],
+    .slide[data-step="2"] .tl-row[data-at="1"],
+    .slide[data-step="2"] .tl-row[data-at="2"],
+    .slide[data-step="3"] .tl-row { opacity: 1; }
+    .slide[data-step="0"] .tl-row[data-at="0"] .tl-v,
+    .slide[data-step="1"] .tl-row[data-at="1"] .tl-v,
+    .slide[data-step="2"] .tl-row[data-at="2"] .tl-v,
+    .slide[data-step="3"] .tl-row[data-at="3"] .tl-v,
+    .slide[data-step="0"] .tl-row[data-at="0"] strong,
+    .slide[data-step="1"] .tl-row[data-at="1"] strong,
+    .slide[data-step="2"] .tl-row[data-at="2"] strong,
+    .slide[data-step="3"] .tl-row[data-at="3"] strong { color: var(--ocean); }
+    .punch.at-end { opacity: 0; transition: opacity 620ms var(--ease); }
+    .slide[data-step="3"] .punch.at-end { opacity: 1; }
+
+    .fv-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border: 1px solid var(--ocean);
+      color: var(--ocean);
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .06em;
+      white-space: nowrap;
+    }
+
+    /* Kay window — chat driving real systems, browser pane alongside. */
+    .kay-window {
+      margin-top: clamp(16px, 2.6vh, 36px);
+      border: 1px solid var(--rule);
+      background: var(--paper-2);
+      box-shadow: var(--shadow-float);
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: minmax(0, 1fr);
+      height: clamp(286px, 44vh, 424px);
+    }
+    .kw-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 13px;
+      border-bottom: 1px solid var(--hairline);
+      background: color-mix(in srgb, var(--sand) 60%, var(--paper-2));
+    }
+    .kw-shot { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+    .shot-notes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(14px, 2vw, 28px); }
+    .shot-notes p { display: flex; gap: 10px; border-top: 1px solid var(--hairline); padding-top: 12px; font-size: clamp(12.5px, 1.02vw, 16px); line-height: 1.42; color: var(--muted); }
+    .shot-notes .sn { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; color: var(--ocean); padding-top: 3px; }
+    .shot-notes strong { color: var(--ink-2); font-weight: 650; }
+    @media (max-width: 900px) { .shot-notes { grid-template-columns: 1fr; gap: 10px; } }
+    .kw-lights { display: flex; gap: 6px; }
+    .kw-lights i { width: 9px; height: 9px; border-radius: 50%; background: rgba(13, 13, 13, .17); }
+    .kw-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      height: 23px;
+      padding: 0 10px;
+      background: var(--paper-2);
+      border: 1px solid var(--hairline);
+      border-radius: 6px;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--ink-2);
+      letter-spacing: -.01em;
+    }
+    .kw-body { display: grid; grid-template-columns: minmax(0, 1.04fr) minmax(0, .96fr); min-height: 0; }
+    .kw-chat {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      padding: 15px 17px;
+      border-right: 1px solid var(--hairline);
+      min-height: 0;
+      overflow: hidden;
+    }
+    .kw-user {
+      align-self: flex-end;
+      max-width: 78%;
+      padding: 7px 11px;
+      border-radius: 10px;
+      background: var(--sand);
+      font-size: 12.5px;
+      color: var(--ink-2);
+    }
+    .kw-skill {
+      align-self: flex-start;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 4px 10px;
+      border: 1px solid var(--sage-deep);
+      border-radius: 999px;
+      color: var(--ocean);
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: .04em;
+    }
+    .kw-steps { display: grid; gap: 8px; }
+    .kw-step {
+      display: grid;
+      grid-template-columns: 78px minmax(0, 1fr);
+      gap: 10px;
+      align-items: baseline;
+      font-size: 12px;
+      line-height: 1.32;
+      color: var(--muted);
+    }
+    .kw-step b {
+      font-family: var(--mono);
+      font-size: 9.5px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--sage-deep);
+    }
+    .kw-proposal {
+      margin-top: auto;
+      padding: 10px 12px;
+      border: 1px solid var(--hairline);
+      border-left: 3px solid var(--ocean);
+      background: var(--paper-3);
+    }
+    .kw-proposal strong { display: block; margin-bottom: 2px; font-size: 12px; color: var(--ink-2); }
+    .kw-proposal span { font-size: 11.5px; color: var(--muted); }
+    .kw-browser { display: grid; grid-template-rows: 30px minmax(0, 1fr); min-height: 0; }
+    .kw-url {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 12px;
+      border-bottom: 1px solid var(--hairline);
+      background: var(--paper-3);
+      font-family: var(--mono);
+      font-size: 10.5px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .kw-page { padding: 15px 17px; min-height: 0; overflow: hidden; }
+    .kw-page h4 { margin: 0 0 3px; font-size: 13.5px; letter-spacing: -.025em; color: var(--ink-2); }
+    .kw-sub {
+      font-family: var(--mono);
+      font-size: 9.5px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 11px;
+    }
+    .kw-body-text { font-size: 11.5px; line-height: 1.45; color: var(--muted); }
+    .kw-table { margin-top: 12px; border-top: 1px solid var(--hairline); }
+    .kw-trow {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--hairline);
+      font-size: 11.5px;
+      color: var(--muted);
+    }
+    .kw-trow b { color: var(--ink-2); font-weight: 650; }
+    .spec-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: clamp(14px, 2.2vh, 24px);
+    }
+    .spec-chip {
+      padding: 6px 11px;
+      border: 1px solid var(--hairline);
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .spec-chip.lead-chip { border-color: var(--ocean); color: var(--ocean); }
+
+    /* Routing pipeline — one step needs the expensive model. */
+    .pipeline {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: clamp(14px, 2vw, 30px);
+      margin-top: clamp(24px, 4vh, 56px);
+    }
+    .pipe-step {
+      display: grid;
+      gap: 14px;
+      align-content: start;
+      padding-top: 18px;
+      border-top: 2px solid var(--hairline);
+    }
+    .pipe-step:last-child { border-top-color: var(--ocean); }
+    .pipe-n {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: .1em;
+      color: var(--muted);
+    }
+    .pipe-task {
+      font-size: clamp(15px, 1.25vw, 21px);
+      line-height: 1.15;
+      letter-spacing: -.03em;
+      font-weight: 650;
+      color: var(--ink-2);
+      text-wrap: balance;
+    }
+    .pipe-model {
+      justify-self: start;
+      padding: 7px 12px;
+      border: 1px solid var(--hairline);
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .06em;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .pipe-model.open { border-color: var(--sage-deep); color: var(--ocean); }
+    .pipe-model.frontier {
+      border-color: var(--ink-2);
+      background: var(--ink-2);
+      color: var(--paper-2);
+      font-weight: 700;
+    }
+    .pipe-caption {
+      margin-top: clamp(18px, 2.8vh, 30px);
+      padding-top: 18px;
+      border-top: 1px solid var(--hairline);
+      font-size: clamp(15px, 1.28vw, 21px);
+      line-height: 1.34;
+      letter-spacing: -.022em;
+      color: var(--ink-2);
+      text-wrap: balance;
+    }
+    .pipe-caption em { font-style: normal; color: var(--ocean); }
+    .pipe-note {
+      margin-top: clamp(10px, 1.6vh, 16px);
+      font-family: var(--mono);
+      font-size: clamp(11px, .98vw, 13px);
+      letter-spacing: .05em;
+      color: var(--muted);
+    }
+
+    @media (max-width: 900px) {
+      .pipeline { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+    }
+
+    /* Altitudes — what an admin can ask at each zoom level. */
+    .altitudes { margin-top: clamp(22px, 3.6vh, 46px); border-top: 1px solid var(--hairline); }
+    .alt-row {
+      display: grid;
+      grid-template-columns: 128px minmax(0, 1fr);
+      gap: clamp(16px, 2.4vw, 36px);
+      align-items: baseline;
+      padding: clamp(15px, 2.2vh, 22px) 0;
+      border-bottom: 1px solid var(--hairline);
+    }
+    .alt-tag {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--sage-deep);
+    }
+    .alt-q {
+      font-size: clamp(16px, 1.5vw, 25px);
+      line-height: 1.2;
+      letter-spacing: -.03em;
+      color: var(--ink-2);
+      font-weight: 650;
+      text-wrap: balance;
+    }
+    .alt-detail { margin-top: 6px; color: var(--muted); font-size: clamp(13px, 1.02vw, 16px); line-height: 1.4; }
+    .boundary {
+      margin-top: clamp(20px, 3vh, 34px);
+      padding: 16px 18px;
+      border: 1px solid var(--hairline);
+      border-left: 3px solid var(--ocean);
+      background: var(--paper-3);
+    }
+    .boundary strong { color: var(--ink-2); font-weight: 650; }
+    .boundary p { color: var(--muted); font-size: clamp(13.5px, 1.05vw, 17px); line-height: 1.45; }
+
+    /* Composition — what actually shaped one turn: yours vs invented. */
+    .composition { margin-top: clamp(16px, 3vh, 40px); display: grid; gap: clamp(12px, 2vh, 20px); }
+    .comp-head {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--hairline);
+    }
+    .comp-bar {
+      display: grid;
+      grid-template-columns: 7fr 93fr;
+      height: clamp(44px, 6.5vh, 72px);
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius-control);
+      overflow: hidden;
+    }
+    .comp-bar.flipped { grid-template-columns: 72fr 28fr; }
+    .comp-seg.mine { background: color-mix(in srgb, var(--ocean) 30%, var(--paper-2)); }
+    .comp-seg.theirs {
+      background: repeating-linear-gradient(135deg, var(--paper-3) 0 7px, var(--sand) 7px 14px);
+      border-left: 1px solid var(--hairline);
+    }
+    .comp-legend { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(18px, 2.6vw, 48px); }
+    .comp-item { display: flex; gap: 11px; align-items: baseline; }
+    .comp-dot { width: 10px; height: 10px; flex: none; border-radius: 3px; transform: translateY(1px); }
+    .comp-dot.mine { background: color-mix(in srgb, var(--ocean) 62%, var(--paper-2)); }
+    .comp-dot.theirs { background: var(--sand); border: 1px solid var(--hairline); }
+    .comp-item strong { color: var(--ink-2); font-weight: 650; }
+    .comp-item span { color: var(--muted); font-size: clamp(12.5px, 1vw, 16px); line-height: 1.4; }
+
+    /* Residue — the durable things one session leaves behind. */
+    .residue {
+      display: grid;
+      grid-template-columns: minmax(0, .86fr) minmax(0, 1.14fr);
+      gap: clamp(26px, 3.8vw, 68px);
+      align-items: start;
+      margin-top: clamp(12px, 2.8vh, 38px);
+    }
+    .residue-head {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding-bottom: 11px;
+      border-bottom: 1px solid var(--hairline);
+    }
+    .residue-out .residue-head { color: var(--ocean); }
+    .residue-prompt {
+      margin-top: clamp(12px, 1.8vh, 18px);
+      font-family: var(--serif);
+      font-size: clamp(17px, min(1.7vw, 2.8vh), 27px);
+      line-height: 1.32;
+      letter-spacing: -.02em;
+      color: var(--ink-2);
+      text-wrap: balance;
+    }
+    .residue-once {
+      margin-top: clamp(10px, 1.5vh, 16px);
+      color: var(--muted);
+      font-size: clamp(12.5px, 1vw, 15px);
+      line-height: 1.4;
+    }
+    .residue-cards { display: grid; gap: clamp(7px, 1.2vh, 13px); margin-top: clamp(12px, 1.8vh, 18px); }
+    .residue-card {
+      display: grid;
+      grid-template-columns: 78px minmax(0, 1fr);
+      gap: 14px;
+      align-items: baseline;
+      background: var(--paper-2);
+      border: 1px solid var(--hairline);
+      border-left: 2px solid var(--ocean);
+      border-radius: var(--radius-control);
+      padding: clamp(9px, 1.5vh, 15px) clamp(13px, 1.2vw, 19px);
+    }
+    .residue-kind {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--ocean);
+    }
+    .residue-card strong {
+      display: block;
+      color: var(--ink-2);
+      font-weight: 650;
+      letter-spacing: -.015em;
+      font-size: clamp(13.5px, 1.1vw, 17px);
+    }
+    .residue-note {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: clamp(12.5px, .98vw, 15px);
+      line-height: 1.38;
+    }
+
+    /* Promotion ladder — personal → team → org, with review gates. */
+    .ladder { margin-top: clamp(20px, 3.4vh, 44px); display: grid; gap: 0; }
+    .rung {
+      display: grid;
+      grid-template-columns: clamp(112px, 9vw, 148px) minmax(0, 1fr);
+      gap: clamp(20px, 2.6vw, 40px);
+      align-items: baseline;
+      padding: clamp(14px, 2vh, 20px) clamp(14px, 1.8vw, 22px);
+      border: 1px solid var(--hairline);
+      background: var(--paper-2);
+    }
+    .rung.org { border-color: var(--ocean); }
+    .rung-tag {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      color: var(--sage-deep);
+    }
+    .rung strong { display: block; color: var(--ink-2); font-size: clamp(15px, 1.3vw, 21px); letter-spacing: -.028em; margin-bottom: 4px; }
+    .rung p { color: var(--muted); font-size: clamp(13px, 1.02vw, 16px); line-height: 1.4; }
+    .gate {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 0 9px clamp(14px, 1.8vw, 22px);
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .gate::before { content: "↓"; color: var(--ocean); font-size: 13px; }
+
+    /* Closing slide — the case and the plan, side by side. */
+    .ask-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.02fr);
+      gap: clamp(26px, 4vw, 64px);
+      margin-top: clamp(20px, 3.2vh, 42px);
+      align-items: start;
+    }
+    .ask-head {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding-bottom: 10px;
+    }
+    .ask-block { border-top: 2px solid var(--rule); padding-top: 16px; }
+    .ask-block.accent { border-top-color: var(--ocean); }
+    .ask-block p {
+      color: var(--muted);
+      font-size: clamp(14px, 1.18vw, 19px);
+      line-height: 1.42;
+      text-wrap: pretty;
+    }
+    .ask-block strong { color: var(--ink-2); font-weight: 650; }
+    .ask-note {
+      margin-top: 14px;
+      font-family: var(--mono);
+      font-size: clamp(10.5px, .95vw, 12.5px);
+      line-height: 1.5;
+      letter-spacing: .04em;
+      color: var(--muted);
+    }
+
+    .ask-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    @media (max-width: 900px) {
+      .ask-grid, .ask-grid.three { grid-template-columns: 1fr; gap: 24px; }
+    }
+
+
+    .controls {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    .nav-button {
+      height: 34px;
+      min-width: 34px;
+      border-radius: 8px;
+      border: 1px solid var(--hairline);
+      background: transparent;
+      color: var(--ink-2);
+      cursor: pointer;
+      transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+    }
+    .nav-button:hover { background: rgba(37,37,36,.06); border-color: var(--rule); }
+    .nav-button:active { transform: translateY(1px); }
+    .nav-button:focus-visible { outline: 2px solid var(--sage-deep); outline-offset: 2px; }
+    .nav-button[disabled] { opacity: .32; cursor: default; }
+    .right { justify-self: end; }
+
+    .hero-slide {
+      grid-template-columns: minmax(0, 1fr);
+      isolation: isolate;
+      overflow: hidden;
+      background:
+        linear-gradient(180deg, rgba(15, 15, 17, 0.08), rgba(15, 15, 17, 0.78)),
+        radial-gradient(circle at 78% 24%, rgba(168, 209, 217, 0.26), transparent 30%),
+        radial-gradient(circle at 18% 84%, rgba(47, 96, 122, 0.24), transparent 34%),
+        linear-gradient(124deg, #0f0f11 0%, #17242b 48%, #050607 100%);
+    }
+    .hero-slide::before,
+    .hero-slide::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+    }
+    .hero-slide::before {
+      opacity: .42;
+      background:
+        linear-gradient(110deg, rgba(244, 241, 234, 0.12) 0 1px, transparent 1px 22%),
+        linear-gradient(160deg, transparent 0 48%, rgba(244, 241, 234, 0.08) 48% 49%, transparent 49% 100%);
+      mask-image: linear-gradient(90deg, rgba(0,0,0,.75), transparent 72%);
+    }
+    .hero-slide::after {
+      opacity: .045;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.86' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      transform: scale(1.4);
+    }
+    .hero-slide .content {
+      display: grid;
+      align-items: end;
+      min-height: 100%;
+      padding: clamp(54px, 7vw, 112px) clamp(44px, 7vw, 116px) clamp(58px, 8vw, 124px);
+    }
+    .hero-slide .stack {
+      gap: 28px;
+      max-width: 1180px;
+    }
+    .hero-logo {
+      position: absolute;
+      top: clamp(42px, 6vw, 88px);
+      left: clamp(44px, 7vw, 116px);
+      width: clamp(34px, 4vw, 58px);
+      height: auto;
+      color: var(--paper);
+      opacity: .92;
+    }
+    .hero-slide h1 {
+      max-width: 890px;
+      font-size: clamp(58px, 7.5vw, 126px);
+      line-height: .86;
+      letter-spacing: -0.062em;
+    }
+    .hero-slide .lead {
+      max-width: 760px;
+      color: rgba(244, 241, 234, 0.86);
+      font-size: clamp(18px, 1.48vw, 23px);
+      line-height: 1.5;
+      letter-spacing: -0.018em;
+    }
+    .hero-slide .eyebrow {
+      color: rgba(244, 241, 234, 0.72);
+    }
+    .hero-slide .hero-kicker {
+      display: inline-flex;
+      width: max-content;
+      max-width: 100%;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid rgba(244, 241, 234, 0.42);
+    }
+    .hero-slide .hero-kicker::before {
+      content: "";
+      width: 34px;
+      height: 1px;
+      background: var(--sage);
+    }
+
+    @media (max-width: 900px) {
+      .slide { grid-template-columns: 1fr; }
+      .content { padding: 32px; }
+      .split-content { grid-template-columns: 1fr; gap: 24px; align-content: center; }
+      .progress { width: auto; }
+      .bottombar { grid-template-columns: auto minmax(120px, 1fr) auto; }
+      .brand span:last-child, .right { display: none; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition-duration: 1ms !important; scroll-behavior: auto !important; }
+      .reveal { opacity: 1; transform: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="deck-app" aria-label="Bonsai finserv deck">
+    <main class="slide-stage" id="stage">
+      <section class="slide dark hero-slide active" data-title="Turning AI work into an organizational capability">
+        <div class="content">
+          <svg class="hero-logo" viewBox="0 0 270 279" aria-label="Bonsai"><rect x="34" y="0" width="157" height="89" rx="44.5" fill="currentColor"/><rect x="112" y="96" width="158" height="90" rx="45" fill="currentColor"/><rect x="0" y="192" width="254" height="87" rx="43.5" fill="currentColor"/></svg>
+          <div class="stack">
+            <h1 class="reveal" style="--i:1">Turning AI work into an <em>organizational capability.</em></h1>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide" data-title="Your best people already use AI well">
+        <div class="content statement">
+          <div class="statement-block">
+            <p class="eyebrow reveal" style="--i:0">The stakes</p>
+            <h2 class="statement-head reveal" style="--i:1">Your best people already use AI well. <em>It's stuck on their laptops.</em></h2>
+            <p class="statement-sub reveal" style="--i:2">A clever personal workflow never becomes a tool the whole firm can use.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide" data-title="Everyone is using AI. Nobody is getting better at it.">
+        <div class="content stacked">
+          <div class="stack" style="max-width:1080px;">
+            <p class="eyebrow reveal" style="--i:0">The problem</p>
+            <h2 class="reveal" style="--i:1">Everyone is using AI. <em>Nobody is getting better at it.</em></h2>
+            <p class="lead reveal" style="--i:2">Inconsistent prompting leads to inconsistent results.</p>
+          </div>
+          <div class="scatter-grid">
+            <div class="quote-col reveal" style="--i:3" aria-label="One person asking for the same portfolio company update four different ways over four months">
+              <div class="quote-row"><div class="quote-num">March</div><p class="quote-text">“what's the latest on Halston Industrial?”</p></div>
+              <div class="quote-row"><div class="quote-num">April</div><p class="quote-text">“give me a status update on Halston”</p></div>
+              <div class="quote-row"><div class="quote-num">May</div><p class="quote-text">“Pull together Halston Industrial before the quarterly review: covenant headroom, order book vs. plan, and flag anything that puts the credit at risk.”</p></div>
+              <div class="quote-row"><div class="quote-num">June</div><p class="quote-text">“halston update pls”</p></div>
+            </div>
+            <div class="target-col reveal" style="--i:4">
+              <svg class="target" viewBox="0 0 360 360" role="img" aria-label="A target showing one person's four results: May lands near the centre, March and April further out, June misses the board">
+                <circle class="ring" cx="180" cy="180" r="150"/>
+                <circle class="ring mid" cx="180" cy="180" r="110"/>
+                <circle class="ring inner" cx="180" cy="180" r="70"/>
+                <circle class="ring inner" cx="180" cy="180" r="32"/>
+                <circle class="bull" cx="180" cy="180" r="6"/>
+                <line class="cross" x1="180" y1="14" x2="180" y2="52"/>
+                <line class="cross" x1="180" y1="308" x2="180" y2="346"/>
+                <line class="cross" x1="14" y1="180" x2="52" y2="180"/>
+                <line class="cross" x1="308" y1="180" x2="346" y2="180"/>
+                <g class="dart" style="--i:0"><circle cx="132" cy="222" r="7"/><text x="146" y="227">Mar</text></g>
+                <g class="dart" style="--i:1"><circle cx="248" cy="250" r="7"/><text x="262" y="255">Apr</text></g>
+                <g class="dart close" style="--i:2"><circle cx="198" cy="166" r="7"/><text x="212" y="171">May</text></g>
+                <g class="dart" style="--i:3"><circle cx="58" cy="76" r="7"/><text x="72" y="81">Jun</text></g>
+              </svg>
+              <p class="target-caption">One analyst · one portfolio company · four months</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide" data-title="Being bad at software now costs more">
+        <div class="content stacked">
+          <div class="stack" style="max-width:1080px;">
+            <p class="eyebrow reveal" style="--i:0">Why this is new</p>
+            <h2 class="head-md reveal" style="--i:1">For the first time, being bad at software <em>costs more</em> than being good at it.</h2>
+            <p class="lead reveal" style="--i:2">The less you put in, the more it has to spend working out what you meant.</p>
+          </div>
+          <div class="cascade" aria-label="What a vague prompt costs: more research, longer sessions, and a bigger model">
+            <div class="cascade-quote reveal" style="--i:3">
+              <div class="quote-num">June</div>
+              <p class="quote-text">“halston update pls”</p>
+            </div>
+            <p class="cascade-step reveal" style="--i:4"><span class="n">01</span><span><strong>More research.</strong> It has to work out what you meant before it can start.</span></p>
+            <p class="cascade-step reveal" style="--i:5"><span class="n">02</span><span><strong>Longer sessions.</strong> More turns spent whittling a vague answer down to the one you needed, every turn at full price.</span></p>
+            <p class="cascade-step reveal" style="--i:6"><span class="n">03</span><span><strong>A bigger model.</strong> Only a smart model can get a good answer from a vague question. You're paying it to do the thinking.</span></p>
+            <p class="cascade-out reveal" style="--i:7">A worse answer, at several times the cost.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide" data-title="And it's making your outcomes generic">
+        <div class="content stacked vcenter">
+          <div class="stack" style="max-width:1080px;">
+            <p class="eyebrow reveal" style="--i:0">The part nobody counts</p>
+            <h2 class="head-md reveal" style="--i:1">And it's making your outcomes <em>generic.</em></h2>
+            <p class="lead lead-wide reveal" style="--i:2">The model makes the judgment calls you didn't, and it makes them the same way for everyone.</p>
+          </div>
+          <div class="composition">
+            <p class="comp-head reveal" style="--i:3">What actually shaped a session</p>
+            <div class="comp-bar reveal" style="--i:4" role="img" aria-label="A bar showing a thin slice of the turn shaped by your own context and taste, and a large remainder invented by the model on the spot">
+              <div class="comp-seg mine"></div>
+              <div class="comp-seg theirs"></div>
+            </div>
+            <div class="comp-legend">
+              <p class="comp-item reveal" style="--i:5"><i class="comp-dot mine"></i><span><strong>Your judgment.</strong> Your context, your taste, the decisions you already made.</span></p>
+              <p class="comp-item reveal" style="--i:6"><i class="comp-dot theirs"></i><span><strong>Best guess.</strong> The model filling in what you probably meant.</span></p>
+            </div>
+          </div>
+          <p class="punch centered reveal" style="--i:7">You are paying a premium <em>to think like everyone else.</em></p>
+        </div>
+      </section>
+
+      <section class="slide" data-title="This is a configuration problem">
+        <div class="content stacked vcenter">
+          <div class="stack" style="max-width:1080px;">
+            <p class="eyebrow reveal" style="--i:0">What good looks like</p>
+            <h2 class="reveal" style="--i:1">This is a <em>configuration problem.</em></h2>
+            <p class="lead reveal" style="--i:2">The more the work leans on what's yours, the more it comes out like you.</p>
+          </div>
+          <div class="composition">
+            <p class="comp-head reveal" style="--i:3">What you want it to look like</p>
+            <div class="comp-bar flipped reveal" style="--i:4" role="img" aria-label="The same bar as before, now mostly shaped by your own context, skills and memory, with only a small remainder left to the model">
+              <div class="comp-seg mine"></div>
+              <div class="comp-seg theirs"></div>
+            </div>
+            <div class="comp-legend">
+              <p class="comp-item reveal" style="--i:5"><i class="comp-dot mine"></i><span><strong>Your judgment.</strong> The context, skills and memory the product already holds for you.</span></p>
+              <p class="comp-item reveal" style="--i:6"><i class="comp-dot theirs"></i><span><strong>Best guess.</strong> Only the part nobody could have written down in advance.</span></p>
+            </div>
+          </div>
+          <p class="punch centered reveal" style="--i:7">Your best people already do this by hand, <em>one prompt at a time.</em></p>
+        </div>
+      </section>
+
+      <section class="slide" data-title="And it should be a by-product of usage" data-steps="3">
+        <div class="content stacked">
+          <div class="stack" style="max-width:1080px;">
+            <p class="eyebrow reveal" style="--i:0">Our bet</p>
+            <h2 class="head-md reveal" style="--i:1">And it should be a <em>by-product of usage.</em></h2>
+            <p class="lead reveal" style="--i:2">You do the job. Bonsai keeps track of how you did it.</p>
+          </div>
+          <div class="bet-grid">
+          <div class="reveal" style="--i:2">
+              <div class="tl">
+                <div class="tl-row" data-at="0"><span class="tl-v">01</span><span><strong>No skill.</strong><span class="tl-note">Every run starts from a blank prompt.</span></span></div>
+                <div class="tl-row" data-at="1"><span class="tl-v">02</span><span><strong>Bonsai creates a skill.</strong><span class="tl-note">Written from what the user actually did.</span></span></div>
+                <div class="tl-row" data-at="2"><span class="tl-v">03</span><span><strong>Bonsai improves it.</strong><span class="tl-note">Corrections and preferences fold back in overnight.</span></span></div>
+                <div class="tl-row" data-at="3"><span class="tl-v">04</span><span><strong>Bonsai improves it again.</strong><span class="tl-note">Every run sharpens it further.</span></span></div>
+              </div>
+            </div>
+          <div class="target-col reveal" style="--i:3">
+            <svg class="target" viewBox="0 0 360 360" role="img" aria-label="The same target, with each revision of the skill landing its runs closer to the centre">
+              <circle class="ring" cx="180" cy="180" r="150"/>
+              <circle class="ring mid" cx="180" cy="180" r="110"/>
+              <circle class="ring inner" cx="180" cy="180" r="70"/>
+              <circle class="ring inner" cx="180" cy="180" r="32"/>
+              <circle class="bull" cx="180" cy="180" r="6"/>
+              <line class="cross" x1="180" y1="14" x2="180" y2="52"/>
+              <line class="cross" x1="180" y1="308" x2="180" y2="346"/>
+              <line class="cross" x1="14" y1="180" x2="52" y2="180"/>
+              <line class="cross" x1="308" y1="180" x2="346" y2="180"/>
+              <g class="gen" data-gen="0">
+                <circle cx="58" cy="76" r="7"/><circle cx="268" cy="262" r="7"/><circle cx="96" cy="270" r="7"/>
+              </g>
+              <g class="gen" data-gen="1">
+                <circle cx="232" cy="140" r="7"/><circle cx="140" cy="238" r="7"/><circle cx="108" cy="148" r="7"/>
+              </g>
+              <g class="gen" data-gen="2">
+                <circle cx="208" cy="152" r="7"/><circle cx="162" cy="220" r="7"/><circle cx="146" cy="166" r="7"/>
+              </g>
+              <g class="gen" data-gen="3">
+                <circle cx="192" cy="170" r="7"/><circle cx="172" cy="196" r="7"/><circle cx="166" cy="172" r="7"/>
+              </g>
+            </svg>
+            <div>
+              <p class="target-caption" style="margin-bottom:8px;">What you typed</p>
+              <div class="vstate" data-when="0">
+                <p class="vstate-prompt">“Pull together Halston Industrial before the quarterly review and flag anything that puts the credit at risk.”</p>
+              </div>
+              <div class="vstate" data-when="1">
+                <p class="vstate-prompt">“halston review brief”</p>
+              </div>
+              <div class="vstate" data-when="2">
+                <p class="vstate-prompt">“rerun the halston brief”</p>
+              </div>
+              <div class="vstate" data-when="3">
+                <p class="vstate-prompt">“halston pls”</p>
+              </div>
+            </div>
+          </div>
+          </div>
+          <p class="punch at-end centered">The prompts don't get better. <em>The results do.</em></p>
+        </div>
+      </section>
+
+      <section class="slide" data-title="Bonsai is where the work happens">
+        <div class="content stacked">
+          <div class="stack" style="max-width:1120px;">
+            <p class="eyebrow reveal" style="--i:0">The product</p>
+            <h2 class="head-md reveal" style="--i:1">Bonsai is <em>where the work happens.</em></h2>
+            <p class="lead reveal" style="--i:2">Connect the systems you already use, then just do your job. Any model: Anthropic, OpenAI, Gemini, DeepSeek or open-weight, on your own keys.</p>
+          </div>
+          <div class="residue">
+            <div class="residue-ask reveal" style="--i:3">
+              <p class="residue-head">What you asked, once</p>
+              <p class="residue-prompt">&ldquo;Pull together Halston Industrial before the quarterly review and flag anything that puts the credit at risk.&rdquo;</p>
+              <p class="residue-once">One analyst, one afternoon, in plain English.</p>
+            </div>
+            <div class="residue-out">
+              <p class="residue-head reveal" style="--i:4">What Bonsai kept</p>
+              <div class="residue-cards">
+                <div class="residue-card reveal" style="--i:5">
+                  <p class="residue-kind">Skill</p>
+                  <div><strong>Portfolio review brief</strong><span class="residue-note">The steps this job takes, in order, ready to run again on the next company.</span></div>
+                </div>
+                <div class="residue-card reveal" style="--i:6">
+                  <p class="residue-kind">Memory</p>
+                  <div><strong>The Halston position</strong><span class="residue-note">What you hold, who signs off, what they pushed back on last quarter.</span></div>
+                </div>
+                <div class="residue-card reveal" style="--i:7">
+                  <p class="residue-kind">Deliverable</p>
+                  <div><strong>Halston review brief</strong><span class="residue-note">The finished document, every number traceable to the system it came from.</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p class="punch centered reveal" style="--i:8">You did the work once. <em>Everything under it is reusable.</em></p>
+        </div>
+      </section>
+
+      <section class="slide" data-title="It closes the loop after every session">
+        <div class="content split-content">
+          <div class="stack">
+            <p class="eyebrow reveal" style="--i:0">The product · the dreaming loop</p>
+            <h2 class="head-md reveal" style="--i:1">It closes the loop <em>after every session.</em></h2>
+            <p class="lead reveal" style="--i:2">When you finish a piece of work, Bonsai reviews what just happened and updates what it knows.</p>
+            <div class="lanes reveal" style="--i:3">
+              <p class="lanes-head">Running in the product today</p>
+              <p class="lane"><strong>Remembers</strong><span>the facts, names and decisions worth keeping</span></p>
+              <p class="lane"><strong>Corrects</strong><span>the instructions this session just proved wrong</span></p>
+              <p class="lane"><strong>Takes stock</strong><span>of what was done, so none of it is lost</span></p>
+            </div>
+          </div>
+          <div class="loop-col reveal" style="--i:4">
+            <svg class="loop" viewBox="-60 0 680 400" role="img" aria-label="A circular loop: you start a piece of work, Bonsai pulls in skills and context, Bonsai reviews the session, Bonsai improves the skills and memory">
+              <defs>
+                <marker id="loopArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                  <path d="M0 0 L10 5 L0 10 z" fill="var(--ocean)"/>
+                </marker>
+              </defs>
+              <path class="ring-arc" d="M314.2 72.5 A132 132 0 0 1 407.5 165.8"/>
+              <path class="ring-arc" d="M407.5 234.2 A132 132 0 0 1 314.2 327.5"/>
+              <path class="ring-arc" d="M245.8 327.5 A132 132 0 0 1 152.5 234.2"/>
+              <path class="ring-arc" d="M152.5 165.8 A132 132 0 0 1 245.8 72.5"/>
+              <circle class="node" cx="280" cy="68" r="7"/>
+              <circle class="node" cx="412" cy="200" r="7"/>
+              <circle class="node" cx="280" cy="332" r="7"/>
+              <circle class="node" cx="148" cy="200" r="7"/>
+              <text class="loop-label" x="280" y="38" text-anchor="middle">01 · You start a piece of work</text>
+              <text class="loop-label" x="432" y="192" text-anchor="start">02 · Bonsai pulls in<tspan x="432" dy="17">skills and context</tspan></text>
+              <text class="loop-label" x="280" y="374" text-anchor="middle">03 · Bonsai reviews what happened</text>
+              <text class="loop-label" x="128" y="192" text-anchor="end">04 · Bonsai improves<tspan x="128" dy="17">skills and memory</tspan></text>
+            </svg>
+            <p class="loop-caption">Every run feeds the next one</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide" data-title="And your work never touches our servers">
+        <div class="content stacked">
+          <div class="stack" style="max-width:1080px;">
+            <p class="eyebrow reveal" style="--i:0">Privacy and security</p>
+            <h2 class="head-md reveal" style="--i:1">And your work never touches <em>our servers.</em></h2>
+            <p class="lead reveal" style="--i:2">Bonsai runs on your machine. Your sessions, your memory, and your skills stay there.</p>
+          </div>
+          <div class="lanes reveal" style="--i:3">
+            <p class="lanes-head">What this means in practice</p>
+            <p class="lane"><strong>Sessions, memory, and skills</strong><span>are files on your disk, not rows in our database</span></p>
+            <p class="lane"><strong>We never see your work</strong><span>diagnostics are off by default, anonymous when enabled, and never carry content</span></p>
+            <p class="lane"><strong>Your model agreement, not ours</strong><span>bring your own keys and your existing terms apply unchanged</span></p>
+            <p class="lane"><strong>Air-gapped if you want it</strong><span>a fully black-box setup, with zero signal back to us, is supported</span></p>
+          </div>
+          <p class="punch centered reveal" style="--i:4">The safest place to run AI on your work is <em>the machine it is already on.</em></p>
+        </div>
+      </section>
+
+      <section class="slide dark" data-title="What does this get you?">
+        <div class="content statement">
+          <div class="statement-block">
+            <p class="eyebrow reveal" style="--i:0">The payoff</p>
+            <h2 class="statement-head reveal" style="--i:1">So what does this <em>get you?</em></h2>
+            <p class="statement-sub reveal" style="--i:2">Better results from cheaper models. Visibility into every cent. Compounding across your team.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide" data-title="Codified work makes cheaper models more effective">
+        <div class="content stacked vcenter">
+          <div class="stack" style="max-width:1080px;">
+            <p class="eyebrow reveal" style="--i:0">Payoff · Cost</p>
+            <h2 class="head-md reveal" style="--i:1">Codified work makes cheaper models <em>more effective.</em></h2>
+            <p class="lead reveal" style="--i:2">When a task has a fixed shape, you know which parts need frontier reasoning, and which never did.</p>
+          </div>
+          <div class="pipeline" aria-label="The four steps of the portfolio-review skill and the model tier each routes to">
+            <article class="pipe-step reveal" style="--i:3">
+              <p class="pipe-n">01</p>
+              <p class="pipe-task">Pull the financials</p>
+              <span class="pipe-model">small + fast</span>
+            </article>
+            <article class="pipe-step reveal" style="--i:4">
+              <p class="pipe-n">02</p>
+              <p class="pipe-task">Extract the covenant figures</p>
+              <span class="pipe-model open">open-weight</span>
+            </article>
+            <article class="pipe-step reveal" style="--i:5">
+              <p class="pipe-n">03</p>
+              <p class="pipe-task">Summarize the lender correspondence</p>
+              <span class="pipe-model open">open-weight</span>
+            </article>
+            <article class="pipe-step reveal" style="--i:6">
+              <p class="pipe-n">04</p>
+              <p class="pipe-task">Decide what matters, write the brief</p>
+              <span class="pipe-model frontier">frontier</span>
+            </article>
+          </div>
+          <p class="pipe-caption reveal" style="--i:7">One of these four needs the expensive model. <em>Ad-hoc prompting pays frontier prices for all four.</em></p>
+        </div>
+      </section>
+
+      <section class="slide" data-title="Your organization's AI effectiveness, down to the token">
+        <div class="content stacked">
+          <div class="stack" style="max-width:1080px;">
+            <p class="eyebrow reveal" style="--i:0">Payoff · Visibility</p>
+            <h2 class="head-md reveal" style="--i:1">Your organization's AI effectiveness, <em>down to the token.</em></h2>
+            <p class="lead reveal" style="--i:2">We measure four things, always against how you were working before.</p>
+          </div>
+          <div class="altitudes">
+            <div class="alt-row reveal" style="--i:3">
+              <p class="alt-tag">Cost</p>
+              <div>
+                <p class="alt-q">Are you spending less than you would have?</p>
+                <p class="alt-detail">You name the model you would have used anyway. Bonsai reports what the work actually cost against that baseline.</p>
+              </div>
+            </div>
+            <div class="alt-row reveal" style="--i:4">
+              <p class="alt-tag">Formalization</p>
+              <div>
+                <p class="alt-q">How much of your work has a fixed shape?</p>
+                <p class="alt-detail">Share of sessions running through a skill, and the miss rate where one should have run and did not.</p>
+              </div>
+            </div>
+            <div class="alt-row reveal" style="--i:5">
+              <p class="alt-tag">Compounding</p>
+              <div>
+                <p class="alt-q">Is the second run cheaper than the first?</p>
+                <p class="alt-detail">Repeat work measured against its own earlier runs, in the task buckets your teams actually use.</p>
+              </div>
+            </div>
+            <div class="alt-row reveal" style="--i:6">
+              <p class="alt-tag">Upkeep</p>
+              <div>
+                <p class="alt-q">What does the self-improvement loop cost?</p>
+                <p class="alt-detail">The review lanes run at a small, capped share of spend, reported next to what they produced.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide" data-title="The harness is the product">
+        <div class="content stacked">
+          <div class="stack" style="max-width:1080px;">
+            <p class="eyebrow reveal" style="--i:0">Payoff · Flexibility</p>
+            <h2 class="head-md reveal" style="--i:1">The harness is <em>the product.</em></h2>
+            <p class="lead reveal" style="--i:2">The models are converging, and the price of intelligence keeps falling.</p>
+          </div>
+          <div class="altitudes">
+            <div class="alt-row reveal" style="--i:3">
+              <p class="alt-tag">Models</p>
+              <div>
+                <p class="alt-q">Every model is getting good and cheap</p>
+                <p class="alt-detail">With the price of intelligence falling, no single model stays an advantage for long.</p>
+              </div>
+            </div>
+            <div class="alt-row reveal" style="--i:4">
+              <p class="alt-tag">The harness</p>
+              <div>
+                <p class="alt-q">What your firm builds on top is what lasts</p>
+                <p class="alt-detail">Skills, memory and context carry over when you change models, so you move to the best infrastructure underneath without rebuilding.</p>
+              </div>
+            </div>
+            <div class="alt-row reveal" style="--i:5">
+              <p class="alt-tag">The winners</p>
+              <div>
+                <p class="alt-q">Firms whose harness lets them build faster and better</p>
+                <p class="alt-detail">Better work on the best infrastructure available, with no vendor lock-in.</p>
+              </div>
+            </div>
+          </div>
+          <p class="punch centered reveal" style="--i:8">When every model is good and cheap, <em>flexibility is the advantage.</em></p>
+        </div>
+      </section>
+
+      <section class="slide" data-title="The longer you run on Bonsai, the less you lose when people leave">
+        <div class="content stacked">
+          <div class="stack" style="max-width:1080px;">
+            <p class="eyebrow reveal" style="--i:0">Where this goes</p>
+            <h2 class="head-md reveal" style="--i:1">The longer you run on Bonsai, the less you lose <em>when people leave.</em></h2>
+            <p class="lead reveal" style="--i:2">Every person's work builds a living knowledge graph. Each graph is theirs. What the firm shares is process, not taste.</p>
+          </div>
+          <div class="altitudes">
+            <div class="alt-row reveal" style="--i:3">
+              <p class="alt-tag">Today</p>
+              <div>
+                <p class="alt-q">Better AI</p>
+                <p class="alt-detail">The graph makes each person's own work sharper, because the system already knows their context.</p>
+              </div>
+            </div>
+            <div class="alt-row reveal" style="--i:4">
+              <p class="alt-tag">Soon</p>
+              <div>
+                <p class="alt-q">Continuity</p>
+                <p class="alt-detail">A vacation, a parental leave, a transition. The work continues because the context no longer lives in one head.</p>
+              </div>
+            </div>
+            <div class="alt-row reveal" style="--i:5">
+              <p class="alt-tag">Always</p>
+              <div>
+                <p class="alt-q">Less key-person risk</p>
+                <p class="alt-detail">When someone leaves, their knowledge graph stays with the firm.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide" data-title="A new hire's first run starts where the team's best run left off">
+        <div class="content stacked">
+          <div class="stack" style="max-width:1080px;">
+            <p class="eyebrow reveal" style="--i:0">Payoff · Scale</p>
+            <h2 class="head-md reveal" style="--i:1">Your best employees <em>pull everyone else up.</em></h2>
+            <p class="lead reveal" style="--i:2">Proven work spreads instead of being rediscovered, and every user personalizes on top of it.</p>
+          </div>
+          <div class="ladder">
+            <div class="rung reveal" style="--i:3">
+              <p class="rung-tag">Personal</p>
+              <div>
+                <strong>portfolio-review v3</strong>
+                <p>One person's skill, sharpened over a dozen real runs.</p>
+              </div>
+            </div>
+            <p class="gate reveal" style="--i:4">Reviewed and versioned</p>
+            <div class="rung reveal" style="--i:5">
+              <p class="rung-tag">Team</p>
+              <div>
+                <strong>Published to the deal team</strong>
+                <p>Everyone starts at v3 instead of a blank prompt, and personalizes on top of it.</p>
+              </div>
+            </div>
+            <p class="gate reveal" style="--i:6">Approved for wider use</p>
+            <div class="rung org reveal" style="--i:7">
+              <p class="rung-tag">Organization</p>
+              <div>
+                <strong>Standardized across the firm</strong>
+                <p>Improvements made anywhere flow back through the same review.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide dark" data-title="Using AI isn't the advantage">
+        <div class="content statement">
+          <div class="statement-block">
+            <h2 class="statement-head reveal" style="--i:1">Using AI isn't the advantage. <em>Getting better at it is.</em></h2>
+          </div>
+        </div>
+      </section>
+
+    <section class="slide" data-title="The AI economy runs on 30 million developers">
+        <div class="content stacked">
+          <div class="stack" style="max-width:1080px;">
+            <p class="eyebrow reveal" style="--i:0">Appendix · State of the market</p>
+            <h2 class="head-md reveal" style="--i:1">The AI economy runs on 30 million developers. <em>1.5 billion knowledge workers are next.</em></h2>
+            <p class="lead reveal" style="--i:2">Most token revenue comes from coding. Everywhere else, diffusion is still thin.</p>
+          </div>
+          <div class="altitudes">
+            <div class="alt-row reveal" style="--i:3">
+              <p class="alt-tag">30M</p>
+              <div>
+                <p class="alt-q">Developers</p>
+                <p class="alt-detail">The vast majority of token spend today. Diffusion is deepest where the users write code.</p>
+              </div>
+            </div>
+            <div class="alt-row reveal" style="--i:4">
+              <p class="alt-tag">1.5B</p>
+              <div>
+                <p class="alt-q">Knowledge workers</p>
+                <p class="alt-detail">Everyone else. Almost none of their work runs through AI yet.</p>
+              </div>
+            </div>
+            <div class="alt-row reveal" style="--i:5">
+              <p class="alt-tag">Diffusion</p>
+              <div>
+                <p class="alt-q">Code is deepest. Law took off in the last 12 months.</p>
+                <p class="alt-detail">Broad knowledge work is less than 5% diffused. Counts are industry estimates, and diffusion depth is directional, not measured.</p>
+              </div>
+            </div>
+          </div>
+          <p class="punch centered reveal" style="--i:8">The opportunity is <em>the other 95%.</em></p>
+        </div>
+      </section>
+<section class="slide" data-title="Thirty days, measured against your own baseline">
+        <div class="content stacked">
+          <div class="stack" style="max-width:1080px;">
+            <p class="eyebrow reveal" style="--i:0">Appendix · The next step</p>
+            <h2 class="head-md reveal" style="--i:1">Thirty days, <em>measured against your own baseline.</em></h2>
+            <p class="lead reveal" style="--i:2">A small engagement on one real workflow your team already relies on.</p>
+          </div>
+          <div class="altitudes">
+            <div class="alt-row reveal" style="--i:3">
+              <p class="alt-tag">The cohort</p>
+              <div>
+                <p class="alt-q">Five to ten users on comparable work</p>
+                <p class="alt-detail">Starting from that one workflow.</p>
+              </div>
+            </div>
+            <div class="alt-row reveal" style="--i:4">
+              <p class="alt-tag">The measurement</p>
+              <div>
+                <p class="alt-q">Cost and quality, before and after</p>
+                <p class="alt-detail">On your own numbers, with model mix and the useful skills created alongside.</p>
+              </div>
+            </div>
+            <div class="alt-row reveal" style="--i:5">
+              <p class="alt-tag">The friction</p>
+              <div>
+                <p class="alt-q">None for your security team</p>
+                <p class="alt-detail">Runs on your machines, your keys, your model agreements. Air-gapped if you want it.</p>
+              </div>
+            </div>
+            <div class="alt-row reveal" style="--i:6">
+              <p class="alt-tag">The shape</p>
+              <div>
+                <p class="alt-q">A small number of design partners</p>
+                <p class="alt-detail">We build your first workflows with you.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <footer class="bottombar">
+      <div class="brand" aria-label="Bonsai finserv deck"><span>Bonsai</span></div>
+      <div class="progress" aria-hidden="true"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="controls">
+        <button class="nav-button" id="prev" type="button" aria-label="Previous slide">←</button>
+        <button class="nav-button" id="next" type="button" aria-label="Next slide">→</button>
+      </div>
+      <div class="meta right"><span id="counter">01 / 13</span></div>
+    </footer>
+  </div>
+
+  <script>
+    const slides = Array.from(document.querySelectorAll('.slide'));
+    const progressFill = document.getElementById('progressFill');
+    const counter = document.getElementById('counter');
+    const prev = document.getElementById('prev');
+    const next = document.getElementById('next');
+
+    const STORAGE_KEY = 'bonsai-finserv-deck-slide';
+
+    // Storage and history can throw in sandboxed panes, and an artifact pane may run
+    // the page on an opaque origin where localStorage is unavailable entirely. Every
+    // mechanism is tried in turn so losing one does not lose the user's place.
+    function readSaved() {
+      const readers = [
+        () => localStorage.getItem(STORAGE_KEY),
+        () => sessionStorage.getItem(STORAGE_KEY),
+        () => (new RegExp('(?:^|; *)' + STORAGE_KEY + '=(\\d+)').exec(document.cookie) || [])[1],
+        () => (/^bonsai-finserv-deck:(\d+)$/.exec(window.name || '') || [])[1],
+      ];
+      for (const read of readers) {
+        try {
+          const raw = read();
+          if (raw === null || raw === undefined || raw === '') continue;
+          const n = Number(raw);
+          if (Number.isInteger(n)) return n;
+        } catch {}
+      }
+      return NaN;
+    }
+    function writeSaved(value) {
+      try { localStorage.setItem(STORAGE_KEY, String(value)); } catch {}
+      try { sessionStorage.setItem(STORAGE_KEY, String(value)); } catch {}
+      try { document.cookie = `${STORAGE_KEY}=${value};path=/;max-age=604800;SameSite=Lax`; } catch {}
+      // window.name survives reloads even on an opaque origin, but it belongs to the
+      // host if the host set it: only claim it when it is empty or already ours.
+      try {
+        if (!window.name || /^bonsai-finserv-deck:\d+$/.test(window.name)) window.name = `bonsai-finserv-deck:${value}`;
+      } catch {}
+    }
+    function writeHash(value) {
+      try { history.replaceState(null, '', `#slide-${value}`); }
+      catch { try { location.hash = `slide-${value}`; } catch {} }
+    }
+
+    function restoredIndex() {
+      // Deeplink wins: #slide-3 or #3 in the URL hash.
+      let hashMatch = null;
+      try { hashMatch = /^#(?:slide-)?(\d+)$/.exec(location.hash); } catch {}
+      if (hashMatch) {
+        const n = Number(hashMatch[1]) - 1;
+        if (n >= 0 && n < slides.length) return n;
+      }
+      // Otherwise restore the last-viewed slide (survives artifact refreshes).
+      const saved = readSaved();
+      if (Number.isInteger(saved) && saved >= 0 && saved < slides.length) return saved;
+      return 0;
+    }
+
+    let index = restoredIndex();
+    let step = 0;
+
+    function pad(n) { return String(n).padStart(2, '0'); }
+
+    // Some slides build in stages: → advances the stage before advancing the slide.
+    function stepsFor(i) { return Number(slides[i].dataset.steps || 0); }
+
+    function advance() {
+      if (step < stepsFor(index)) { step += 1; render(); return; }
+      go(index + 1, 'forward');
+    }
+
+    function retreat() {
+      if (step > 0) { step -= 1; render(); return; }
+      go(index - 1, 'backward');
+    }
+
+    slides.forEach((slide, i) => {
+      const dots = slide.querySelector('.section-dots');
+      if (dots) {
+        for (let d = 0; d < slides.length; d++) {
+          const el = document.createElement('div');
+          el.className = 'section-dot' + (d <= i ? ' on' : '');
+          dots.appendChild(el);
+        }
+      }
+    });
+
+    function go(nextIndex, direction) {
+      const clamped = Math.max(0, Math.min(slides.length - 1, nextIndex));
+      if (clamped === index) return;
+      const goingForward = clamped > index;
+      slides[index].classList.remove('active');
+      slides[index].classList.toggle('previous', goingForward);
+      index = clamped;
+      // Entering a slide backwards shows it fully built; forwards starts clean.
+      step = direction === 'backward' ? stepsFor(index) : 0;
+      render();
+    }
+
+    function render() {
+      slides.forEach((slide, i) => {
+        slide.classList.toggle('active', i === index);
+        slide.classList.toggle('previous', i < index);
+        slide.dataset.step = i === index ? String(step) : '0';
+      });
+      const pct = ((index + 1) / slides.length) * 100;
+      document.querySelector('.deck-app').classList.toggle('dark-chrome', slides[index].classList.contains('dark'));
+      progressFill.style.width = pct + '%';
+      counter.textContent = `${pad(index + 1)} / ${pad(slides.length)}`;
+      prev.disabled = index === 0 && step === 0;
+      next.disabled = index === slides.length - 1 && step === stepsFor(index);
+      writeHash(index + 1);
+      writeSaved(index);
+    }
+
+    prev.addEventListener('click', retreat);
+    next.addEventListener('click', advance);
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowRight' || event.key === 'PageDown' || event.key === ' ') {
+        event.preventDefault(); advance();
+      }
+      if (event.key === 'ArrowLeft' || event.key === 'PageUp' || event.key === 'Backspace') {
+        event.preventDefault(); retreat();
+      }
+      if (event.key === 'Home') { event.preventDefault(); go(0, 'forward'); }
+      if (event.key === 'End') { event.preventDefault(); go(slides.length - 1, 'forward'); }
+    });
+
+    window.addEventListener('hashchange', () => {
+      const match = /^#(?:slide-)?(\d+)$/.exec(location.hash);
+      if (match) go(Number(match[1]) - 1, 'forward');
+    });
+
+    let touchStartX = null;
+    document.getElementById('stage').addEventListener('pointerdown', (event) => { touchStartX = event.clientX; });
+    document.getElementById('stage').addEventListener('pointerup', (event) => {
+      if (touchStartX === null) return;
+      const delta = event.clientX - touchStartX;
+      touchStartX = null;
+      if (Math.abs(delta) > 64) { delta < 0 ? advance() : retreat(); }
+    });
+
+    render();
+  </script>
+</body>
+</html>
